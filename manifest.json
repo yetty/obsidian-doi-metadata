@@ -1,6 +1,6 @@
 {
-	"id": "obsidian-doi-metadata",
-	"name": "Obsidian DOI Metadata",
+	"id": "doi-metadata",
+	"name": "DOI Metadata",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "Gets data from DOI and saves it as Markdown metadata",

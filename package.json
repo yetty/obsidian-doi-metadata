@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-doi-metadata",
+	"name": "doi-metadata",
 	"version": "1.0.0",
-	"description": "An Obsidian plugin that fetches and updates metadata for academic papers based on their DOI using the CrossRef API.",
+	"description": "A plugin that fetches and updates metadata for academic papers based on their DOI using the CrossRef API.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
