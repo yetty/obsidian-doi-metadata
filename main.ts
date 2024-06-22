@@ -22,7 +22,18 @@ export default class MyPlugin extends Plugin {
 			name: 'Load metadata using DOI',
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				const file = view.file;
+
+				if (!file) {
+					new Notice('No file is open or the file is invalid.');
+					return;
+				}
+
 				const fileCache = this.app.metadataCache.getFileCache(file);
+
+				if (!fileCache) {
+					new Notice('File cache could not be loaded.');
+					return;
+				}
 
 				// Get DOI from front matter
 				const frontMatter = fileCache.frontmatter;
@@ -33,6 +44,7 @@ export default class MyPlugin extends Plugin {
 
 				const doi = frontMatter.doi;
 				const metadata = await this.fetchMetadataFromDOI(doi);
+
 				if (metadata.error) {
 					new Notice(`Error fetching metadata: ${metadata.error}`);
 					return;
