@@ -1,17 +1,24 @@
 import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
 
+interface CrossRefAuthor {
+	given: string;
+	family: string;
+}
+
 interface CrossRefResponse {
-	message: {
-		title: string[];
-		author: { given: string; family: string }[];
-		'container-title': string[];
-		'published-print': { 'date-parts': number[][] };
-		volume: string;
-		issue: string;
-		page: string;
-		DOI: string;
-		URL: string;
-	};
+	title: string[];
+	author: CrossRefAuthor[];
+	'container-title': string[];
+	'published-print': { 'date-parts': number[][] };
+	volume: string;
+	issue: string;
+	page: string;
+	DOI: string;
+	URL: string;
+}
+
+interface CrossRefError {
+	error: string;
 }
 
 export default class MyPlugin extends Plugin {
@@ -45,7 +52,7 @@ export default class MyPlugin extends Plugin {
 				const doi = frontMatter.doi;
 				const metadata = await this.fetchMetadataFromDOI(doi);
 
-				if (metadata.error) {
+				if ('error' in metadata) {
 					new Notice(`Error fetching metadata: ${metadata.error}`);
 					return;
 				}
@@ -90,12 +97,12 @@ export default class MyPlugin extends Plugin {
 		});
 	}
 
-	async fetchMetadataFromDOI(doi: string) {
+	async fetchMetadataFromDOI(doi: string): Promise<CrossRefResponse | CrossRefError> {
 		const url = `https://api.crossref.org/works/${doi}`;
 		const response = await fetch(url);
 		if (response.status === 200) {
-			const data: CrossRefResponse = await response.json();
-			return data.message;
+			const data = await response.json();
+			return data.message as CrossRefResponse;
 		} else {
 			return { error: `HTTP error ${response.status}` };
 		}
