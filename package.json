@@ -1,15 +1,25 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-doi-metadata",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "An Obsidian plugin that fetches and updates metadata for academic papers based on their DOI using the CrossRef API.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"obsidian",
+		"plugin",
+		"DOI",
+		"metadata",
+		"CrossRef",
+		"academic",
+		"papers",
+		"reference",
+		"bibliography"
+	],
+	"author": "Juda Kaleta",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
