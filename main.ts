@@ -58,7 +58,7 @@ export default class MyPlugin extends Plugin {
 				}
 
 				// Update front matter with metadata
-				const newFrontMatter = {
+				const newFrontMatter: Record<string, any> = {
 					...frontMatter,
 					title: `"${metadata['title'][0]}"`,
 					author: metadata.author.map((a: { given: string; family: string }) => `${a.family}, ${a.given}`).join(' and '),
@@ -78,9 +78,9 @@ export default class MyPlugin extends Plugin {
 				});
 
 				// Sort the keys in alphabetical order
-				const sortedFrontMatter = Object.keys(newFrontMatter)
+				const sortedFrontMatter: Record<string, any> = Object.keys(newFrontMatter)
 					.sort()
-					.reduce((obj, key) => {
+					.reduce((obj: Record<string, any>, key) => {
 						obj[key] = newFrontMatter[key];
 						return obj;
 					}, {});
