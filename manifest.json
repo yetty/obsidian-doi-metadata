@@ -5,7 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "Gets data from DOI and saves it as Markdown metadata",
 	"author": "Juda Kaleta",
-	"authorUrl": "https://github.com/yetty/obsidian-doi-metadata",
+	"authorUrl": "https://www.judakaleta.cz/",
 	"fundingUrl": "https://github.com/yetty/obsidian-doi-metadata",
 	"isDesktopOnly": false
 }
