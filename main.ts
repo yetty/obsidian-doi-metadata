@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -8,6 +8,20 @@ interface MyPluginSettings {
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: 'default'
+}
+
+interface CrossRefResponse {
+	message: {
+		title: string[];
+		author: { given: string; family: string }[];
+		'container-title': string[];
+		'published-print': { 'date-parts': number[][] };
+		volume: string;
+		issue: string;
+		page: string;
+		DOI: string;
+		URL: string;
+	};
 }
 
 export default class MyPlugin extends Plugin {
@@ -28,40 +42,64 @@ export default class MyPlugin extends Plugin {
 		const statusBarItemEl = this.addStatusBarItem();
 		statusBarItemEl.setText('Status Bar Text');
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+			id: 'load-metadata-using-doi',
+			name: 'Load metadata using DOI',
+			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				const file = view.file;
+				const fileCache = this.app.metadataCache.getFileCache(file);
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+				// Get DOI from front matter
+				const frontMatter = fileCache.frontmatter;
+				if (!frontMatter || !frontMatter.doi) {
+					new Notice('DOI not found in front matter');
+					return;
 				}
+
+				const doi = frontMatter.doi;
+				const metadata = await this.fetchMetadataFromDOI(doi);
+				if (metadata.error) {
+					new Notice(`Error fetching metadata: ${metadata.error}`);
+					return;
+				}
+
+				// Update front matter with metadata
+				const newFrontMatter = {
+					...frontMatter,
+					title: `"${metadata['title'][0]}"`,
+					author: metadata.author.map((a: { given: string; family: string }) => `${a.family}, ${a.given}`).join(' and '),
+					journal: metadata['container-title'] ? metadata['container-title'][0] : undefined,
+					year: metadata['published-print'] ? metadata['published-print']['date-parts'][0][0] : undefined,
+					volume: metadata.volume,
+					issue: metadata.issue,
+					pages: metadata.page,
+					url: metadata.URL,
+				};
+
+				// Remove undefined values from newFrontMatter
+				Object.keys(newFrontMatter).forEach(key => {
+					if (newFrontMatter[key] === undefined) {
+						delete newFrontMatter[key];
+					}
+				});
+
+				// Sort the keys in alphabetical order
+				const sortedFrontMatter = Object.keys(newFrontMatter)
+					.sort()
+					.reduce((obj, key) => {
+						obj[key] = newFrontMatter[key];
+						return obj;
+					}, {});
+
+				// Convert front matter back to string
+				const newFrontMatterString = this.convertObjectToFrontMatterString(sortedFrontMatter);
+				const content = view.data;
+				const newContent = content.replace(/^---\n[\s\S]*?\n---\n/, `${newFrontMatterString}\n`);
+
+				// Update the file with new content
+				await this.app.vault.modify(file, newContent);
+				new Notice('Metadata updated successfully');
 			}
 		});
 
@@ -78,6 +116,33 @@ export default class MyPlugin extends Plugin {
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
+	async fetchMetadataFromDOI(doi: string) {
+		const url = `https://api.crossref.org/works/${doi}`;
+		const response = await fetch(url);
+		if (response.status === 200) {
+			const data: CrossRefResponse = await response.json();
+			return data.message;
+		} else {
+			return { error: `HTTP error ${response.status}` };
+		}
+	}
+
+	convertObjectToFrontMatterString(frontMatter: Record<string, any>): string {
+		const frontMatterLines = ['---'];
+		for (const [key, value] of Object.entries(frontMatter)) {
+			if (Array.isArray(value)) {
+				frontMatterLines.push(`${key}:`);
+				value.forEach(item => {
+					frontMatterLines.push(`  - ${item}`);
+				});
+			} else {
+				frontMatterLines.push(`${key}: ${value}`);
+			}
+		}
+		frontMatterLines.push('---');
+		return frontMatterLines.join('\n');
+	}
+
 	onunload() {
 
 	}
@@ -88,22 +153,6 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
 	}
 }
 
